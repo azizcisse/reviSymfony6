@@ -9,13 +9,19 @@ use Symfony\Component\Routing\Annotation\Route;
 
 class FirstController extends AbstractController
 {
-    #[Route('/order/{maVar}', name: 'test.order.route')]
-    public function testOrderRoute($maVar) {
-        return new Response(" <html><body>$maVar</body></html>");   
-    }
+    #[Route('/template', name:'template')]
+function template()
+    {
+    return $this->render('template.html.twig');
+}
 
+#[Route('/order/{maVar}', name:'test.order.route')]
+function testOrderRoute($maVar)
+    {
+    return new Response(" <html><body>$maVar</body></html>");
+}
 
-    #[Route('/first', name:'app_first')]
+#[Route('/first', name:'app_first')]
 function index(): Response
     {
     //Pour chercher au nveau de la BD nos utilisateurs
@@ -25,20 +31,21 @@ function index(): Response
     ]);
 }
 
-#[Route('/aziz/{firstname}/{name}', name:'app_aziz')]
+//#[Route('/aziz/{firstname}/{name}', name:'app_aziz')]
 function hello(Request $request, $name, $firstname): Response
     {
 
     return $this->render('first/hello.html.twig', [
         'prenom' => $firstname,
         'nom' => $name,
+
     ]);
 }
 
- #[Route("multi/{entier1<\d+>}/{entier2<\d+>}", name: "multiplication")]
+#[Route("multi/{entier1<\d+>}/{entier2<\d+>}", name:"multiplication")]
 
-public function multiplication($entier1,$entier2): Response
-{
+function multiplication($entier1, $entier2): Response
+    {
     $resultat = $entier1 * $entier2;
     return new Response("<h1>$resultat</h1>");
 }

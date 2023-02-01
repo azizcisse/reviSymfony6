@@ -1,0 +1,32 @@
+{% extends 'template.html.twig' %}
+{% block title %}
+  Utilisateurs
+{% endblock %}
+
+ {% block PageTitle %}
+      Utilisateurs          
+ {% endblock %}
+
+{% block body %}
+ {{ include('fragments/date-jour.html.twig') }}
+ <div class="alert alert-secondary" role="alert">
+  <a href="{{path('app_tab', {nb: 6})}}">Afficher Tableau</a> 
+ </div>
+ 
+  <table class="table"> 
+    <tr class="table-active">
+
+      <td>Prenom</td>
+      <td>Nom</td>
+      <td>Age</td>
+     
+   </tr> 
+  {% for user in users %}
+    <tr class="table-{% if loop.index is odd %}danger{% else %}warning{% endif %}">
+      <td>{{ user.firstname }}</td>
+      <td>{{ user.name }}</td>
+      <td>{{ user.age }}</td>
+  
+  {% endfor %}
+  </table>
+{% endblock %}
