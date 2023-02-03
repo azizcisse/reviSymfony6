@@ -2,10 +2,16 @@
 
 namespace App\Entity;
 
-use App\Repository\PersonneRepository;
+use DateTime;
+use App\Entity\Hobby;
 use Doctrine\DBAL\Types\Types;
+use ORM\HasLifecycleCallbacks;
 use Doctrine\ORM\Mapping as ORM;
+use App\Repository\PersonneRepository;
+use Doctrine\Common\Collections\Collection;
+use Doctrine\Common\Collections\ArrayCollection;
 
+#[ORM\HasLifecycleCallbacks]
 #[ORM\Entity(repositoryClass: PersonneRepository::class)]
 class Personne
 {
@@ -23,8 +29,31 @@ class Personne
     #[ORM\Column(type: Types::SMALLINT)]
     private ?int $age = null;
 
-    #[ORM\Column(length: 50, nullable: true)]
-    private ?string $job = null;
+    #[ORM\OneToOne(inversedBy: 'personne', cascade: ['persist', 'remove'])]
+    private ?Profile $profile = null;
+
+    #[ORM\ManyToMany(targetEntity: Hobby::class)]
+    private Collection $hobbies;
+
+    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
+    private ?\DateTimeInterface $createdAt = null;
+
+    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
+    private ?\DateTimeInterface $updatedAt = null;
+
+    public function __construct()
+    {
+        $this->hobbies = new ArrayCollection();
+        $this->createdAt = new \DateTime;
+        $this->updatedAt = new DateTime();
+        $this->personnes = new ArrayCollection();
+    }
+
+    #[ORM\PrePersist()]
+    public function setUpdatedAtValue()
+    {
+        $this->updatedAt = new \DateTime();
+    }
 
     public function getId(): ?int
     {
@@ -75,6 +104,66 @@ class Personne
     public function setJob(?string $job): self
     {
         $this->job = $job;
+
+        return $this;
+    }
+
+    public function getProfile(): ?Profile
+    {
+        return $this->profile;
+    }
+
+    public function setProfile(?Profile $profile): self
+    {
+        $this->profile = $profile;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Hobby>
+     */
+    public function getHobbies(): Collection
+    {
+        return $this->hobbies;
+    }
+
+    public function addHobby(Hobby $hobby): self
+    {
+        if (!$this->hobbies->contains($hobby)) {
+            $this->hobbies->add($hobby);
+        }
+
+        return $this;
+    }
+
+    public function removeHobby(Hobby $hobby): self
+    {
+        $this->hobbies->removeElement($hobby);
+
+        return $this;
+    }
+
+    public function getCreatedAt(): ?\DateTimeInterface
+    {
+        return $this->createdAt;
+    }
+
+    public function setCreatedAt(?\DateTimeInterface $createdAt): self
+    {
+        $this->createdAt = $createdAt;
+
+        return $this;
+    }
+
+    public function getUpdatedAt(): ?\DateTimeInterface
+    {
+        return $this->updatedAt;
+    }
+
+    public function setUpdatedAt(?\DateTimeInterface $updatedAt): self
+    {
+        $this->updatedAt = $updatedAt;
 
         return $this;
     }
