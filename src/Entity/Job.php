@@ -34,12 +34,16 @@ class Job
     #[ORM\OneToMany(mappedBy: 'job', targetEntity: Personne::class)]
     private Collection $personnes;
 
+    #[ORM\OneToMany(mappedBy: 'job', targetEntity: Personne::class)]
+    private Collection $personne;
+
     public function __construct()
     {
         
         $this->createdAt = new DateTime;
         $this->updatedAt = new \DateTime();
         $this->personnes = new ArrayCollection();
+        $this->personne = new ArrayCollection();
     }
 
     #[ORM\PrePersist()]
@@ -65,35 +69,6 @@ class Job
         return $this;
     }
 
-    /**
-     * @return Collection<int, Personne>
-     */
-    public function getPersonnes(): Collection
-    {
-        return $this->personnes;
-    }
-
-    public function addPersonne(Personne $personne): self
-    {
-        if (!$this->personnes->contains($personne)) {
-            $this->personnes->add($personne);
-            $personne->setJob($this);
-        }
-
-        return $this;
-    }
-
-    public function removePersonne(Personne $personne): self
-    {
-        if ($this->personnes->removeElement($personne)) {
-            // set the owning side to null (unless already changed)
-            if ($personne->getJob() === $this) {
-                $personne->setJob(null);
-            }
-        }
-
-        return $this;
-    }
     
     public function getCreatedAt(): ?\DateTimeInterface
     {
@@ -118,4 +93,40 @@ class Job
 
         return $this;
     }
+
+    public function __toString(): string
+    {
+        return $this->designation;
+    }
+
+    /**
+     * @return Collection<int, Personne>
+     */
+    public function getPersonne(): Collection
+    {
+        return $this->personne;
+    }
+
+    public function addPersonne(Personne $personne): self
+    {
+        if (!$this->personne->contains($personne)) {
+            $this->personne->add($personne);
+            $personne->setJob($this);
+        }
+
+        return $this;
+    }
+
+    public function removePersonne(Personne $personne): self
+    {
+        if ($this->personne->removeElement($personne)) {
+            // set the owning side to null (unless already changed)
+            if ($personne->getJob() === $this) {
+                $personne->setJob(null);
+            }
+        }
+
+        return $this;
+    }
+
 }

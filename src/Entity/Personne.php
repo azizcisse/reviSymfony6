@@ -11,6 +11,7 @@ use App\Repository\PersonneRepository;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\ArrayCollection;
 
+use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\HasLifecycleCallbacks]
 #[ORM\Entity(repositoryClass: PersonneRepository::class)]
 class Personne
@@ -21,11 +22,16 @@ class Personne
     private ?int $id = null;
 
     #[ORM\Column(length: 50)]
+    #[Assert\NotBlank()]
+    #[Assert\Length(min:4)]
     private ?string $firstname = null;
-
+ 
     #[ORM\Column(length: 50)]
+    #[Assert\NotBlank()]
+    #[Assert\Length(min:2)]
     private ?string $name = null;
 
+    #[Assert\LessThan(100)]
     #[ORM\Column(type: Types::SMALLINT)]
     private ?int $age = null;
 
@@ -40,6 +46,13 @@ class Personne
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
     private ?\DateTimeInterface $updatedAt = null;
+
+    #[ORM\ManyToOne(inversedBy: 'personne')]
+    private ?Job $job = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $image = null;
+
 
     public function __construct()
     {
@@ -92,18 +105,6 @@ class Personne
     public function setAge(int $age): self
     {
         $this->age = $age;
-
-        return $this;
-    }
-
-    public function getJob(): ?string
-    {
-        return $this->job;
-    }
-
-    public function setJob(?string $job): self
-    {
-        $this->job = $job;
 
         return $this;
     }
@@ -167,4 +168,29 @@ class Personne
 
         return $this;
     }
+
+    public function getJob(): ?Job
+    {
+        return $this->job;
+    }
+
+    public function setJob(?Job $job): self
+    {
+        $this->job = $job;
+
+        return $this;
+    }
+
+    public function getImage(): ?string
+    {
+        return $this->image;
+    }
+
+    public function setImage(?string $image): self
+    {
+        $this->image = $image;
+
+        return $this;
+    }
+
 }

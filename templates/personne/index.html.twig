@@ -27,7 +27,18 @@
             )
             }}"
             class="card-link btn-secondary">
-            Détails
+            <i class="fa-solid fa-file-circle-info"></i>
+          </a>
+           <a href="{{
+            path(
+              'personne.edit',
+              {
+                id: personne.id
+              }
+            )
+            }}"
+            class="card-link btn-warning">
+            <i class="fa-solid fa-user-pen"></i>
           </a>
           <a href="{{
             path(
@@ -38,7 +49,7 @@
             )
             }}"
             class="card-link btn-danger">
-            Supprimer
+            <i class="fa-solid fa-trash"></i>
           </a>
         </div>
       </div>
