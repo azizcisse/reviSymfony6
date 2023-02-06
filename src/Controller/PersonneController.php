@@ -5,12 +5,16 @@ namespace App\Controller;
 use App\Entity\Personne;
 use App\Service\Helpers;
 use App\Form\PersonneType;
+use App\Service\PdfService;
 use Psr\Log\LoggerInterface;
+use App\Service\MailerService;
+use App\Service\UploaderService;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\String\Slugger\SluggerInterface;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
@@ -25,7 +29,7 @@ class PersonneController extends AbstractController
     )
     {}
     
-    #[Route('/', name:'personne.list')]
+#[Route('/', name:'personne.list')]
 function index(ManagerRegistry $doctrine): Response
     {
 
@@ -34,6 +38,15 @@ function index(ManagerRegistry $doctrine): Response
     return $this->render('personne/index.html.twig', [
         'personnes' => $personnes,
     ]);
+}
+
+#[Route('/pdf/{id}', name:'personne.pdf')]
+public function generatePdfPersonne(Personne $personne = null, PdfService $pdf): Response
+{
+    $html = $this->render('personne/detail.html.twig', [
+        'personne' => $personne,
+    ]);
+    $pdf->showPdfFile($html);
 }
 
 #[Route('/alls/age/{ageMin}/{ageMax}', name:'personne.age')]
@@ -58,10 +71,13 @@ function statsPersonnesByAge(ManagerRegistry $doctrine, $ageMin, $ageMax): Respo
     );
 }
 
-#[Route('/alls/{page?1}/{nbre?12}', name:'personne.alls')]
-function indexAlls(ManagerRegistry $doctrine, $page, $nbre, LoggerInterface $logger, Helpers $helper): Response
+#[
+    Route('/alls/{page?1}/{nbre?12}', name:'personne.alls'), 
+    IsGranted("ROLE_USER"),
+    ]
+function indexAlls(ManagerRegistry $doctrine, $page, $nbre): Response
     {
-        echo($helper->azizCisse());
+       // echo($helper->azizCisse());
 
     $repository = $doctrine->getRepository(Personne::class);
     $nbPersonne = $repository->count([]);
@@ -137,8 +153,15 @@ function addPersonne(ManagerRegistry $doctrine, Request $request, SluggerInterfa
 }
 
 #[Route('/edit/{id?0}', name:'personne.edit')]
-function editPersonne(Personne $personne = null, ManagerRegistry $doctrine, Request $request, SluggerInterface $slugger): Response
+function editPersonne(
+    Personne $personne = null, 
+    ManagerRegistry $doctrine, 
+    Request $request,
+    UploaderService $uploaderService,
+    MailerService $mailer,
+    ): Response
     {
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
     $new = false;
     if (!$personne) {
         $new = true;
@@ -156,35 +179,26 @@ function editPersonne(Personne $personne = null, ManagerRegistry $doctrine, Requ
         // on va ajouter l'objet personne dans la base de données
         $photo = $form->get('photo')->getData();
         if ($photo) {
-            $originalFilename = pathinfo($photo->getClientOriginalName(), PATHINFO_FILENAME);
-            $safeFilename = $slugger->slug($originalFilename);
-            $newFilename = $safeFilename . '-' . uniqid() . '.' . $photo->guessExtension();
-            try {
-                $photo->move(
-                    $this->getParameter('personne_directory'),
-                    $newFilename
-                );
-            } catch (FileException $e) {
-            }
-            $personne->setImage($newFilename);
+            $directory = $this->getParameter('personne_directory');
+            $personne->setImage($uploaderService->uploadFile($photo, $directory));
         }
-
-        $manager = $doctrine->getManager();
-        $manager->persist($personne);
-        $manager->flush();
-        // Afficher un message de succès
-        $manager = $doctrine->getManager();
-
-        $manager->persist($personne);
-        $manager->flush();
-        // Afficher un message de succès
+        // Afficher un message de succès  
         if ($new) {
             $message = " a été ajouté avec succès";
+            $personne->setCreatedBy($this->getUser());
         } else {
             $message = " a été mis à jour avec succès";
-        }
+            
+        }  
+        // Afficher un message de succès
+        $manager = $doctrine->getManager();
+        $manager->persist($personne);
+        $manager->flush();
+         
+        $mailMessage = $personne->getFirstname().'  '.$personne->getName().' '.$message;
         // Afficher un message de succès
         $this->addFlash('success', $personne->getName() . $message);
+        $mailer->sendEmail(content: $mailMessage);
         // Rediriger verts la liste des personne
         return $this->redirectToRoute('personne.list');
     } else {
