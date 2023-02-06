@@ -29,6 +29,7 @@
             class="card-link btn-secondary">
             <i class="fa-solid fa-file-circle-info"></i>
           </a>
+            {% if is_granted('ROLE_ADMIN') %}
            <a href="{{
             path(
               'personne.edit',
@@ -51,6 +52,7 @@
             class="card-link btn-danger">
             <i class="fa-solid fa-trash"></i>
           </a>
+           {% endif %}
         </div>
       </div>
     {% endfor %}

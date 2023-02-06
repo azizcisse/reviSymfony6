@@ -19,7 +19,7 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
 
-#[Route('personne')]
+#[Route('personne'), IsGranted('ROLE_USER')]
 class PersonneController extends AbstractController
 {
     public function __construct(
@@ -210,7 +210,7 @@ function editPersonne(
     ]);
 }
 
-#[Route('/delete/{id}', name:'personne.delete')]
+#[Route('/delete/{id}', name:'personne.delete'), IsGranted("ROLE_ADMIN")]
 function deletePersonne(ManagerRegistry $doctrine, Personne $personne = null): Response
     {
     //Récupérer la personne
