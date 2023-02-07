@@ -8,7 +8,9 @@ use App\Form\PersonneType;
 use App\Service\PdfService;
 use Psr\Log\LoggerInterface;
 use App\Service\MailerService;
+use App\Event\AddPersonneEvent;
 use App\Service\UploaderService;
+use App\Event\ListAllPersonnesEvent;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -54,6 +56,8 @@ function personnesByAge(ManagerRegistry $doctrine, $ageMin, $ageMax): Response
     {
     $repository = $doctrine->getRepository(Personne::class);
     $personnes = $repository->findPersonneByAgeInterval($ageMin, $ageMax);
+    $listAllPersonneEvent = new ListAllPersonnesEvent(count($personne));
+    $this->dispatcher->dispatch($listAllPersonneEvent, ListAllPersonnesEvent::LIST_ALL_PERSONNE_EVENT);
     return $this->render('personne/index.html.twig', [
         'personnes' => $personnes,
     ]);
@@ -75,7 +79,7 @@ function statsPersonnesByAge(ManagerRegistry $doctrine, $ageMin, $ageMax): Respo
     Route('/alls/{page?1}/{nbre?12}', name:'personne.alls'), 
     IsGranted("ROLE_USER"),
     ]
-function indexAlls(ManagerRegistry $doctrine, $page, $nbre): Response
+function indexAlls(ManagerRegistry $doctrine, $page, $nbre, Personne $personne = null): Response
     {
        // echo($helper->azizCisse());
 
@@ -83,6 +87,9 @@ function indexAlls(ManagerRegistry $doctrine, $page, $nbre): Response
     $nbPersonne = $repository->count([]);
     $nbrePage = ceil($nbPersonne / $nbre);
     $personnes = $repository->findBy([], [], $nbre, offset:($page - 1) * $nbre, );
+    $listAllPersonneEvent = new ListAllPersonnesEvent(count($personnes));
+    $this->dispatcher->dispatch($listAllPersonneEvent, ListAllPersonnesEvent::LIST_ALL_PERSONNE_EVENT);
+
     return $this->render('personne/index.html.twig', [
         'personnes' => $personnes,
         'isPaginated' => true,
@@ -195,10 +202,15 @@ function editPersonne(
         $manager->persist($personne);
         $manager->flush();
          
-        $mailMessage = $personne->getFirstname().'  '.$personne->getName().' '.$message;
+        if ($new){
+            //Création de notre Evenement
+              $addPersonneEvent = new AddPersonneEvent($personne);
+              //On va maintenant dispatcher l'Evenement
+              $this->dispatcher->dispatch($addPersonneEvent, AddPersonneEvent::ADD_PERSONNE_EVENT);
+        }
+
         // Afficher un message de succès
         $this->addFlash('success', $personne->getName() . $message);
-        $mailer->sendEmail(content: $mailMessage);
         // Rediriger verts la liste des personne
         return $this->redirectToRoute('personne.list');
     } else {
